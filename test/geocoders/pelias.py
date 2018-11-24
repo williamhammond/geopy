@@ -1,11 +1,14 @@
 # coding: utf8
 from __future__ import unicode_literals
-from abc import ABCMeta, abstractmethod
-from six import with_metaclass
-import unittest
 
-from geopy.point import Point
+import unittest
+import warnings
+from abc import ABCMeta, abstractmethod
+
+from six import with_metaclass
+
 from geopy.geocoders import Pelias
+from geopy.point import Point
 from test.geocoders.util import GeocoderTestBase, env
 
 
@@ -37,17 +40,30 @@ class BasePeliasTestCase(with_metaclass(ABCMeta, object)):
             {"latitude": 37.33939, "longitude": -121.89496},
         )
 
-    def test_reverse_string(self):
-        self.reverse_run(
-            {"query": "40.75376406311989, -73.98489005863667"},
-            {"latitude": 40.75376406311989, "longitude": -73.98489005863667}
-        )
-
-    def test_reverse_point(self):
+    def test_reverse(self):
         self.reverse_run(
             {"query": Point(40.75376406311989, -73.98489005863667)},
             {"latitude": 40.75376406311989, "longitude": -73.98489005863667}
         )
+
+    def test_boundary_rect(self):
+        self.geocoder = self.make_geocoder(
+            boundary_rect=[[50.1, -130.1], [44.1, -100.9]])
+        self.geocode_run(
+            {"query": "moscow"},  # Idaho USA
+            {"latitude": 46.7323875, "longitude": -117.0001651},
+        )
+
+    def test_boundary_rect_deprecated(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            self.geocoder = self.make_geocoder(
+                boundary_rect=[-130.1, 44.1, -100.9, 50.1])
+            self.geocode_run(
+                {"query": "moscow"},  # Idaho USA
+                {"latitude": 46.7323875, "longitude": -117.0001651},
+            )
+            self.assertEqual(1, len(w))
 
 
 @unittest.skipUnless(

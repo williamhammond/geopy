@@ -80,6 +80,20 @@ class HereTestCase(GeocoderTestBase):
             {"latitude": 48.85718, "longitude": 2.34141}
         )
 
+    def test_bbox(self):
+        self.geocode_run(
+            {"query": "moscow",  # Idaho USA
+             "bbox": [[50.1, -130.1], [44.1, -100.9]]},
+            {"latitude": 46.7323875, "longitude": -117.0001651},
+        )
+
+    def test_mapview(self):
+        self.geocode_run(
+            {"query": "moscow",  # Idaho USA
+             "mapview": [[50.1, -130.1], [44.1, -100.9]]},
+            {"latitude": 46.7323875, "longitude": -117.0001651},
+        )
+
     def test_geocode_shapes(self):
         """
         Here.geocode using additional data parameter (postal code shapes)
@@ -130,19 +144,7 @@ class HereTestCase(GeocoderTestBase):
         input["pageinformation"] = 3
         res = self.geocode_run(input, {}, expect_failure=True)
 
-    def test_reverse_string(self):
-        """
-        Here.reverse string
-        """
-        self.reverse_run(
-            {"query": "40.753898, -73.985071"},
-            {"latitude": 40.753898, "longitude": -73.985071}
-        )
-
-    def test_reverse_point(self):
-        """
-        Here.reverse Point
-        """
+    def test_reverse(self):
         self.reverse_run(
             {"query": Point(40.753898, -73.985071)},
             {"latitude": 40.753898, "longitude": -73.985071}

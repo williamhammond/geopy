@@ -23,6 +23,9 @@ class GeoNames(Geocoder):
         http://www.geonames.org/export/web-services.html#findNearbyPlaceName
     """
 
+    geocode_path = '/searchJSON'
+    reverse_path = '/findNearbyPlaceNameJSON'
+
     def __init__(
             self,
             country_bias=None,
@@ -77,9 +80,12 @@ class GeoNames(Geocoder):
             )
         self.username = username
         self.country_bias = country_bias
-        self.api = "%s://api.geonames.org/searchJSON" % self.scheme
+        domain = 'api.geonames.org'
+        self.api = (
+            "%s://%s%s" % (self.scheme, domain, self.geocode_path)
+        )
         self.api_reverse = (
-            "%s://api.geonames.org/findNearbyPlaceNameJSON" % self.scheme
+            "%s://%s%s" % (self.scheme, domain, self.reverse_path)
         )
 
     def geocode(self, query, exactly_one=True, timeout=DEFAULT_SENTINEL):
@@ -153,14 +159,11 @@ class GeoNames(Geocoder):
                           'argument will become True in geopy 2.0. '
                           'Specify `exactly_one=False` as the argument '
                           'explicitly to get rid of this warning.' % type(self).__name__,
-                          DeprecationWarning)
+                          DeprecationWarning, stacklevel=2)
             exactly_one = False
 
         try:
-            lat, lng = [
-                x.strip() for x in
-                self._coerce_point_to_string(query).split(',')
-            ]
+            lat, lng = self._coerce_point_to_string(query).split(',')
         except ValueError:
             raise ValueError("Must be a coordinate pair or Point")
         params = {

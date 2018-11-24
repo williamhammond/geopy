@@ -18,6 +18,8 @@ class Yandex(Geocoder):
     .. versionadded:: 1.5.0
     """
 
+    api_path = '/1.x/'
+
     def __init__(
             self,
             api_key=None,
@@ -35,7 +37,7 @@ class Yandex(Geocoder):
            Default scheme has been changed from ``http`` to ``https``.
 
         :param str api_key: Yandex API key (not obligatory)
-            http://api.yandex.ru/maps/form.xml
+            https://tech.yandex.ru/maps/keys/get/
 
         :param str lang: response locale, the following locales are
             supported: ``"ru_RU"`` (default), ``"uk_UA"``, ``"be_BY"``,
@@ -78,7 +80,8 @@ class Yandex(Geocoder):
         )
         self.api_key = api_key
         self.lang = lang
-        self.api = '%s://geocode-maps.yandex.ru/1.x/' % self.scheme
+        domain = 'geocode-maps.yandex.ru'
+        self.api = '%s://%s%s' % (self.scheme, domain, self.api_path)
 
     def geocode(self, query, exactly_one=True, timeout=DEFAULT_SENTINEL):
         """
@@ -156,18 +159,15 @@ class Yandex(Geocoder):
                           'argument will become True in geopy 2.0. '
                           'Specify `exactly_one=False` as the argument '
                           'explicitly to get rid of this warning.' % type(self).__name__,
-                          DeprecationWarning)
+                          DeprecationWarning, stacklevel=2)
             exactly_one = False
 
         try:
-            lat, lng = [
-                x.strip() for x in
-                self._coerce_point_to_string(query).split(',')
-            ]
+            point = self._coerce_point_to_string(query, "%(lon)s,%(lat)s")
         except ValueError:
             raise ValueError("Must be a coordinate pair or Point")
         params = {
-            'geocode': '{0},{1}'.format(lng, lat),
+            'geocode': point,
             'format': 'json'
         }
         if self.api_key:

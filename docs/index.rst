@@ -134,6 +134,14 @@ GeocodeFarm
 
    .. automethod:: __init__
 
+Geolake
+--------
+
+.. autoclass:: geopy.geocoders.Geolake
+   :members:
+
+   .. automethod:: __init__
+
 GeoNames
 --------
 
@@ -162,6 +170,14 @@ IGNFrance
 ---------
 
 .. autoclass:: geopy.geocoders.IGNFrance
+   :members:
+
+   .. automethod:: __init__
+
+MapBox
+--------
+
+.. autoclass:: geopy.geocoders.MapBox
    :members:
 
    .. automethod:: __init__
@@ -279,10 +295,13 @@ Data
 ~~~~
 
 .. autoclass:: geopy.location.Location
-    :members: __init__, address, latitude, longitude, altitude, point, raw
+    :members: address, latitude, longitude, altitude, point, raw
 
 .. autoclass:: geopy.point.Point
     :members: __new__, from_string, from_sequence, from_point
+
+.. autoclass:: geopy.timezone.Timezone
+    :members: pytz_timezone, raw
 
 Exceptions
 ~~~~~~~~~~
@@ -326,10 +345,13 @@ Logging
 
 geopy will log geocoding URLs with a logger name ``geopy`` at level `DEBUG`,
 and for some geocoders, these URLs will include authentication information.
+
+HTTP bodies of responses with unsuccessful status codes are logged
+with `INFO` level.
+
 Default logging level is `NOTSET`, which delegates the messages processing to
 the root logger. See docs for :meth:`logging.Logger.setLevel` for more
 information.
-geopy does no logging above `DEBUG`.
 
 
 Semver

@@ -1,7 +1,11 @@
+<<<<<<< HEAD
 from geopy.compat import urlencode, quote, string_compare
 from geopy.exc import (
     GeocoderQueryError,
 )
+=======
+from geopy.compat import quote, urlencode
+>>>>>>> 3b19c8e4f6fdf13dddfbe7a3703ba031ec95194d
 from geopy.geocoders.base import DEFAULT_SENTINEL, Geocoder
 from geopy.location import Location
 from geopy.point import Point
@@ -70,6 +74,7 @@ class MapBox(Geocoder):
         self.domain = domain.strip('/')
         self.api = "%s://%s%s" % (self.scheme, self.domain, self.api_path)
 
+<<<<<<< HEAD
     @staticmethod
     def _format_bbox_param(bbox):
         """
@@ -84,6 +89,8 @@ class MapBox(Geocoder):
         """
         return '%f,%f' % (proximity[0], proximity[1])
 
+=======
+>>>>>>> 3b19c8e4f6fdf13dddfbe7a3703ba031ec95194d
     def _parse_json(self, json, exactly_one=True):
         '''Returns location, (latitude, longitude) from json feed.'''
         features = json['features']
@@ -101,6 +108,7 @@ class MapBox(Geocoder):
         else:
             return [parse_feature(feature) for feature in features]
 
+<<<<<<< HEAD
     @staticmethod
     def _coerce_point_to_string(point):
         """
@@ -116,6 +124,8 @@ class MapBox(Geocoder):
         else:
             raise ValueError("Invalid point")
 
+=======
+>>>>>>> 3b19c8e4f6fdf13dddfbe7a3703ba031ec95194d
     def geocode(
             self,
             query,
@@ -138,15 +148,28 @@ class MapBox(Geocoder):
             exception. Set this only if you wish to override, on this call
             only, the value set during the geocoder's initialization.
 
+<<<<<<< HEAD
         :param proximity: a coordinate to bias local results based on a provided location.
         :type proximity: list of tuple
+=======
+        :param proximity: A coordinate to bias local results based on a provided
+            location.
+        :type proximity: :class:`geopy.point.Point`, list or tuple of ``(latitude,
+            longitude)``, or string as ``"%(latitude)s, %(longitude)s"``.
+>>>>>>> 3b19c8e4f6fdf13dddfbe7a3703ba031ec95194d
 
         :param string country: Country to filter result in form of
             ISO 3166-1 alpha-2 country code.
 
         :param bbox: The bounding box of the viewport within which
             to bias geocode results more prominently.
+<<<<<<< HEAD
         :type bbox: list or tuple
+=======
+            Example: ``[Point(22, 180), Point(-22, -180)]``.
+        :type bbox: list or tuple of 2 items of :class:`geopy.point.Point` or
+            ``(latitude, longitude)`` or ``"%(latitude)s, %(longitude)s"``.
+>>>>>>> 3b19c8e4f6fdf13dddfbe7a3703ba031ec95194d
 
         :rtype: ``None``, :class:`geopy.location.Location` or a list of them, if
             ``exactly_one=False``.
@@ -156,21 +179,31 @@ class MapBox(Geocoder):
         params['access_token'] = self.api_key
         query = self.format_string % query
         if bbox:
+<<<<<<< HEAD
             if len(bbox) != 4:
                 raise GeocoderQueryError(
                     "bbox must be a four-item iterable of lat,lon,lat,lon"
                 )
             params['bbox'] = self._format_bbox_param(bbox)
+=======
+            params['bbox'] = self._format_bounding_box(
+                bbox, "%(lon1)s,%(lat1)s,%(lon2)s,%(lat2)s")
+>>>>>>> 3b19c8e4f6fdf13dddfbe7a3703ba031ec95194d
 
         if country:
             params['country'] = country
 
         if proximity:
+<<<<<<< HEAD
             if len(proximity) != 2:
                 raise GeocoderQueryError(
                     "proximity must be a two-item iterable of lat,lon"
                 )
             params['proximity'] = self._format_proximity_param(proximity)
+=======
+            p = Point(proximity)
+            params['proximity'] = "%s,%s" % (p.longitude, p.latitude)
+>>>>>>> 3b19c8e4f6fdf13dddfbe7a3703ba031ec95194d
 
         quoted_query = quote(query.encode('utf-8'))
         url = "?".join((self.api % dict(query=quoted_query),
@@ -188,7 +221,16 @@ class MapBox(Geocoder):
             timeout=DEFAULT_SENTINEL,
     ):
         """
+<<<<<<< HEAD
         Return an address by location
+=======
+        Return an address by location point.
+
+        :param query: The coordinates for which you wish to obtain the
+            closest human-readable addresses.
+        :type query: :class:`geopy.point.Point`, list or tuple of ``(latitude,
+            longitude)``, or string as ``"%(latitude)s, %(longitude)s"``.
+>>>>>>> 3b19c8e4f6fdf13dddfbe7a3703ba031ec95194d
 
         :param bool exactly_one: Return one result or a list of results, if
             available.
@@ -204,7 +246,11 @@ class MapBox(Geocoder):
         params = {}
         params['access_token'] = self.api_key
 
+<<<<<<< HEAD
         point = self._coerce_point_to_string(query)
+=======
+        point = self._coerce_point_to_string(query, "%(lon)s,%(lat)s")
+>>>>>>> 3b19c8e4f6fdf13dddfbe7a3703ba031ec95194d
         quoted_query = quote(point.encode('utf-8'))
         url = "?".join((self.api % dict(query=quoted_query),
                         urlencode(params)))

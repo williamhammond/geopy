@@ -2,10 +2,10 @@ import hashlib
 
 from geopy.compat import quote_plus, urlencode
 from geopy.exc import (
-    GeocoderServiceError,
     GeocoderAuthenticationFailure,
     GeocoderQueryError,
     GeocoderQuotaExceeded,
+    GeocoderServiceError,
 )
 from geopy.geocoders.base import DEFAULT_SENTINEL, Geocoder
 from geopy.location import Location
@@ -22,6 +22,8 @@ class Baidu(Geocoder):
 
     .. versionadded:: 1.0.0
     """
+
+    api_path = '/geocoder/v2/'
 
     def __init__(
             self,
@@ -83,7 +85,6 @@ class Baidu(Geocoder):
             ssl_context=ssl_context,
         )
         self.api_key = api_key
-        self.api_path = '/geocoder/v2/'
         self.api = '%s://api.map.baidu.com%s' % (self.scheme, self.api_path)
         self.security_key = security_key
 

@@ -1,5 +1,6 @@
 import warnings
 from abc import ABCMeta, abstractmethod
+
 from mock import patch
 from six import with_metaclass
 
@@ -55,7 +56,8 @@ class BaseNominatimTestCase(with_metaclass(ABCMeta, object)):
             {"query": "second street", "limit": 4, "exactly_one": False},
             {}
         )
-        self.assertEqual(4, len(result))
+        self.assertGreaterEqual(len(result), 3)  # PickPoint sometimes returns 3
+        self.assertGreaterEqual(4, len(result))
 
     @patch.object(geopy.geocoders.options, 'default_user_agent',
                   'mocked_user_agent/0.0.0')
@@ -70,14 +72,7 @@ class BaseNominatimTestCase(with_metaclass(ABCMeta, object)):
         )
         self.assertEqual(geocoder.headers['User-Agent'], 'my_user_agent/1.0')
 
-    def test_reverse_string(self):
-        location = self.reverse_run(
-            {"query": "40.75376406311989, -73.98489005863667"},
-            {"latitude": 40.753, "longitude": -73.984}
-        )
-        self.assertIn("New York", location.address)
-
-    def test_reverse_point(self):
+    def test_reverse(self):
         location = self.reverse_run(
             {"query": Point(40.75376406311989, -73.98489005863667)},
             {"latitude": 40.753, "longitude": -73.984}
@@ -232,17 +227,36 @@ class BaseNominatimTestCase(with_metaclass(ABCMeta, object)):
         self.assertFalse(50 <= res.latitude <= 52)
         self.assertFalse(-0.15 <= res.longitude <= -0.11)
 
-        for view_box in [(-0.11, 52, -0.15, 50),
+        for view_box in [((52, -0.11), (50, -0.15)),
                          [Point(52, -0.11), Point(50, -0.15)],
-                         ("-0.11", "52", "-0.15", "50")]:
+                         (("52", "-0.11"), ("50", "-0.15"))]:
             self.geocoder = self.make_geocoder(view_box=view_box)
             self.geocode_run(
                 {"query": "Maple Street"},
                 {"latitude": 51.5223513, "longitude": -0.1382104}
             )
 
+    def test_deprecated_view_box(self):
+        res = self.geocode_run(
+            {"query": "Maple Street"},
+            {},
+        )
+        self.assertFalse(50 <= res.latitude <= 52)
+        self.assertFalse(-0.15 <= res.longitude <= -0.11)
+
+        for view_box in [(-0.11, 52, -0.15, 50),
+                         ("-0.11", "52", "-0.15", "50")]:
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter('always')
+                self.geocoder = self.make_geocoder(view_box=view_box)
+                self.geocode_run(
+                    {"query": "Maple Street"},
+                    {"latitude": 51.5223513, "longitude": -0.1382104}
+                )
+                self.assertEqual(1, len(w))
+
     def test_bounded(self):
-        bb = ('84.719353', '56.588456', '85.296822', '56.437293')
+        bb = (Point('56.588456', '84.719353'), Point('56.437293', '85.296822'))
         query = u('\u0441\u0442\u0440\u043e\u0438\u0442\u0435\u043b\u044c '
                   '\u0442\u043e\u043c\u0441\u043a')
 
@@ -257,6 +271,25 @@ class BaseNominatimTestCase(with_metaclass(ABCMeta, object)):
             {"query": query},
             {"latitude": 56.4803224, "longitude": 85.0060457653324},
         )
+
+    def test_extratags(self):
+        query = "175 5th Avenue NYC"
+        location = self.geocode_run(
+            {"query": query},
+            {},
+        )
+        self.assertIsNone(location.raw.get('extratags'))
+        location = self.geocode_run(
+            {"query": query, "extratags": True},
+            {},
+        )
+        # Nominatim and OpenMapQuest contain the following in extratags:
+        # {'wikidata': 'Q220728', 'wikipedia': 'en:Flatiron Building'}
+        # But PickPoint *sometimes* returns the following instead:
+        # {'wikidata': 'Q1427377'}
+        # So let's simply consider just having the `wikidata` key
+        # in response a success.
+        self.assertTrue(location.raw['extratags']['wikidata'])
 
 
 class NominatimTestCase(BaseNominatimTestCase, GeocoderTestBase):

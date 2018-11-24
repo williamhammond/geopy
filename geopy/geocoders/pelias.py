@@ -1,3 +1,5 @@
+import warnings
+
 from geopy.compat import urlencode
 from geopy.geocoders.base import DEFAULT_SENTINEL, Geocoder
 from geopy.location import Location
@@ -19,6 +21,9 @@ class Pelias(Geocoder):
        ``Mapzen`` geocoder has been renamed to ``Pelias``.
 
     """
+
+    geocode_path = '/v1/search'
+    reverse_path = '/v1/reverse'
 
     def __init__(
             self,
@@ -43,8 +48,16 @@ class Pelias(Geocoder):
         :param str format_string:
             See :attr:`geopy.geocoders.options.default_format_string`.
 
-        :param tuple boundary_rect: Coordinates to restrict search within,
-            given as (west, south, east, north) coordinate tuple.
+        :type boundary_rect: list or tuple of 2 items of :class:`geopy.point.Point`
+            or ``(latitude, longitude)`` or ``"%(latitude)s, %(longitude)s"``.
+        :param boundary_rect: Coordinates to restrict search within.
+            Example: ``[Point(22, 180), Point(-22, -180)]``.
+
+            .. versionchanged:: 1.17.0
+                Previously boundary_rect could be a list of 4 strings or numbers
+                in the format of ``[longitude, latitude, longitude, latitude]``.
+                This format is now deprecated in favor of a list/tuple
+                of a pair of geopy Points and will be removed in geopy 2.0.
 
         :param str country_bias: Bias results to this country (ISO alpha-3).
 
@@ -78,8 +91,12 @@ class Pelias(Geocoder):
         self.api_key = api_key
         self.domain = domain.strip('/')
 
-        self.geocode_api = '%s://%s/v1/search' % (self.scheme, self.domain)
-        self.reverse_api = '%s://%s/v1/reverse' % (self.scheme, self.domain)
+        self.geocode_api = (
+            '%s://%s%s' % (self.scheme, self.domain, self.geocode_path)
+        )
+        self.reverse_api = (
+            '%s://%s%s' % (self.scheme, self.domain, self.reverse_path)
+        )
 
     def geocode(
             self,
@@ -112,10 +129,25 @@ class Pelias(Geocoder):
             })
 
         if self.boundary_rect:
-            params['boundary.rect.min_lon'] = self.boundary_rect[0]
-            params['boundary.rect.min_lat'] = self.boundary_rect[1]
-            params['boundary.rect.max_lon'] = self.boundary_rect[2]
-            params['boundary.rect.max_lat'] = self.boundary_rect[3]
+            boundary_rect = self.boundary_rect
+            if len(boundary_rect) == 4:
+                warnings.warn(
+                    '%s `boundary_rect` format of '
+                    '`[longitude, latitude, longitude, latitude]` is now '
+                    'deprecated and will be not supported in geopy 2.0. '
+                    'Use `[Point(latitude, longitude), Point(latitude, longitude)]` '
+                    'instead.' % type(self).__name__,
+                    DeprecationWarning,
+                    stacklevel=2
+                )
+                lon1, lat1, lon2, lat2 = boundary_rect
+                boundary_rect = [[lat1, lon1], [lat2, lon2]]
+            lon1, lat1, lon2, lat2 = self._format_bounding_box(
+                boundary_rect, "%(lon1)s,%(lat1)s,%(lon2)s,%(lat2)s").split(',')
+            params['boundary.rect.min_lon'] = lon1
+            params['boundary.rect.min_lat'] = lat1
+            params['boundary.rect.max_lon'] = lon2
+            params['boundary.rect.max_lat'] = lat2
 
         if self.country_bias:
             params['boundary.country'] = self.country_bias
@@ -152,10 +184,7 @@ class Pelias(Geocoder):
             ``exactly_one=False``.
         """
         try:
-            lat, lon = [
-                x.strip() for x in
-                self._coerce_point_to_string(query).split(',')
-            ]  # doh
+            lat, lon = self._coerce_point_to_string(query).split(',')
         except ValueError:
             raise ValueError("Must be a coordinate pair or Point")
         params = {
